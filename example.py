@@ -9,21 +9,6 @@ from datetime import timedelta
 
 import atexit
 import psycopg2
-# Вспомогательные функции (начало) для работы с файлом
-# ----------------------------------------------------
-# def read_users(filename="data/users.json"):
-#     """Читает список пользователей из JSON файла"""
-#     try:
-#         with open(filename, "r", encoding="utf-8") as file:
-#             return json.load(file)
-#     except FileNotFoundError:
-#         return []
-
-# def write_users(users, filename="data/users.json"):
-#     """Сохраняет список пользователей в JSON файл"""
-#     with open(filename, "w", encoding="utf-8") as file:
-#         json.dump(users, file, indent=2, ensure_ascii=False)
-
 
 # Константы (начало)
 # ----------------------------------------------------
@@ -39,12 +24,39 @@ DATABASE_URL = os.getenv('DATABASE_URL')
 app.secret_key = os.getenv('SECRET_KEY')
 app.permanent_session_lifetime = timedelta(days=7)
 
-def init_db():
+def get_db_connection():
+    """Создает и возвращает соединение с БД"""
     conn = psycopg2.connect(DATABASE_URL)
-    atexit.register(lambda: conn.close())
     return conn
 
-conn = init_db()
+def init_db():
+    """Создает таблицы в базе данных, если их нет"""
+    print("🔄 Проверяю и инициализирую базу данных...")
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Читаем init.sql и выполняем его
+    try:
+        with open('init.sql', 'r') as f:
+            sql = f.read()
+
+        cur.execute(sql)
+        conn.commit()
+        print("✅ База данных инициализирована (таблицы созданы)")
+    except Exception as e:
+        print(f"⚠️ Ошибка при инициализации БД: {e}")
+    finally:
+        cur.close()
+        conn.close()
+
+# Инициализируем базу данных при старте приложения
+with app.app_context():
+    init_db()
+
+# Создаем соединение для работы репозитория
+conn = get_db_connection()
+atexit.register(lambda: conn.close())
 
 # Передаем соединение в репозиторий
 repo = UserRepository(conn)
