@@ -1,0 +1,44 @@
+{% extends "layouts/layout.html" %}
+
+<!-- этот блок заменит блок title из родительского шаблона -->
+{% block title %}Пользователи{% endblock %}
+
+<!-- этот блок заменит блок content из родительского шаблона -->
+{% block content %}
+{% if messages %}
+  <ul class=flashes>
+  {% for category, message in messages %}
+    <li class="{{ category }}">{{ message }}</li>
+  {% endfor %}
+  </ul>
+{% endif %}
+
+<a href="{{ url_for('users_new') }}">Создать нового</a>
+
+<form action="{{ url_for('users_index') }}" method="get">
+  <input type="search" name="query" value="{{ query or '' }}" />
+  <input type="submit" value="Поиск...">
+</form>
+<table>
+  {% for user in users %}
+    <tr>
+      <td>{{ user.id }}</td>
+      <td>
+        <a href="{{ url_for('users_show', id=user.id) }}">
+          {{ user.name }}
+        </a>
+      </td>
+      <td>
+        <a href="{{ url_for('user_edit', id=user.id) }}">Обновить</a>
+      </td>
+      <td>
+        <form action="{{ url_for('users_delete', id=user.id) }}"
+            method="post"
+            onsubmit="return confirm('Удалить пользователя?');">
+          <input type="submit" value="Удалить">
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}
